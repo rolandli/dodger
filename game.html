@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+
+
+   
+<html>
+<head>
+    <script src="easeljs-0.5.0.min.js"></script>
+    <script src="adjustors.js"></script>
+    <script src="buttonEvents.js"></script>
+    <script src="displayRemoveMenu.js"></script>
+    <script>
+
+		var stage;
+
+		var backgroundImg1;
+		var backgroundObj1;
+		
+		var backgroundImg2;
+		var backgroundObj2;
+		
+		var backgroundImg3;
+		var backgroundObj3;
+		var debugText;
+
+		var playerImg;
+		var playerImg2;
+		var gfxLoaded = 0; //Will serve as preloader
+		var playerObject;
+		
+		//SquareVariables
+		var spawnTimer = 0;
+		var spawnInterval = 2000;
+		var spawnFrequency = 0;
+		
+		var arraySquares = new Array();
+		var arraySpeeds = new Array();
+		var maxSquareSpeed = 5;
+		var arrayElements = 0;
+		var square;
+		var squareSize = 30;
+		var squareImg;
+		var speedChangeInterval = 0;
+		var maxChangeInterval = 10;
+		var squaresAlive = 0;
+		
+		//Stage Variables
+		var screenHeight = 600;
+		var screenWidth = 800;
+		
+		//Player Controls
+		var playerScore = 0;
+		var playerWidth = 35;
+		var fallSpeed = 6;
+		var riseSpeed = 6;
+		var levelStartRiseSpeed = 6;
+		var levelStartFallSpeed = 6;
+		var forceUp = 0;
+		var maxForceUp = 4;
+		var decrementer = 0;
+		var alphaDuration = 0;
+		var maxAlphaDuration = 15;
+		
+		var damageTaken = 5;
+		
+		//Health
+		var playerHealth = 100;
+		var healthLabel;
+		
+		//ScreenControllers
+		var mode = 0;
+		
+		var menuScreenTitle;
+		var gameStartButton;
+		
+		var riseSpeedText;
+		var riseSpeedNumber;
+		var riseSpeedButtonOne;
+		var riseSpeedButtonTwo;
+		
+		var fallSpeedText;
+		var fallSpeedNumber;
+		var fallSpeedButtonOne;
+		var fallSpeedButtonTwo;
+		
+		var playerSizeText;
+		var playerSizeNumber;
+		var playerSizeButtonOne;
+		var playerSizeButtonTwo;
+		
+		var squareSizeText;
+		var squareSizeNumber;
+		var squareSizeButtonOne;
+		var squareSizeButtonTwo;
+		
+		var invisibleTimeText;
+		var invisibleTimeNumber;
+		var invisibleTimeButtonOne;
+		var invisibleTimeButtonTwo;
+		
+	function init(){			
+            // code here.
+			stage = new createjs.Stage("demoCanvas");
+			document.onkeydown = HandleKeys;
+			
+			playerImg = new Image();
+			playerImg.src = "img/dino1.gif";
+			//playerImg.onload = onLoadImage;
+			
+			playerImg2 = new Image();
+			playerImg2.src = "img/dino2.gif";
+			playerImg2.onload = onLoadImage;
+			
+			squareImg = new Image();
+			squareImg.src = "img/meteor1.gif";
+			//squareImg.onload = onLoadMeteor;
+			
+			backgroundImg1 = new Image();
+			backgroundImg1.src = "img/backdrop.gif";
+			backgroundImg1.onload = onBackgroundImage;
+			
+			backgroundImg2 = new Image();
+			backgroundImg2.src = "img/scroll.gif";
+			backgroundImg2.onload = onBackgroundImage2;
+			
+			backgroundImg3 = new Image();
+			backgroundImg3.src = "img/scroll.gif";
+			backgroundImg3.onload = onBackgroundImage3;
+			
+			//backgroundImg1 = new Image();
+			//backgroundImg1.src = "img/background.png";
+			//backgroundImg.onload = onBackgroundImage;
+			//Text Display
+			//stage.addChild(backgroundObj1);
+		
+			healthLabel = new createjs.Text("Health: ", "24px Arial", "#080");
+			healthLabel.x = 500;
+			healthLabel.y = 10;
+			
+			
+			debugText = new createjs.Text("Score: " + playerScore, "24px Arial", "#080");
+			debugText.x = 200;
+			debugText.y = 10;
+			
+			
+			createjs.Ticker.addListener(window);
+			createjs.Ticker.setInterval(25);
+			createjs.Ticker.setFPS(40);
+			
+			initMenuScreen();
+			
+			createjs.Ticker.addListener(stage);
+			stage.update();
+        }
+		
+		function HandleKeys(e){
+			if(e.keyCode == 82){
+				switchMode();
+			}
+		}
+		function recreatePlayer(){
+			stage.removeChild(playerObject);
+			playerObject.scaleX = playerWidth/ 25;
+			playerObject.scaleY = playerWidth/ 25;
+			stage.addChild(playerObject);
+			
+		}/*
+		function recreatePlayer(){
+			playerObject = new createjs.Shape();
+			playerObject.graphics.beginFill("red").drawCircle(0, 0, playerWidth);
+			playerObject.x = 100;
+			playerObject.y = 100;
+		}*/
+		
+		function onLoadImage(){
+			playerObject      = new createjs.Bitmap(playerImg2);
+			playerObject.x    = 100;
+			playerObject.y    = 100;
+			
+		}
+		function onBackgroundImage(){
+			backgroundObj1      = new createjs.Bitmap(backgroundImg1);
+			backgroundObj1.x    = 0;
+			backgroundObj1.y    = 0;
+			displayMenuScreen();
+			
+		}
+		function onBackgroundImage2(){
+			backgroundObj2      = new createjs.Bitmap(backgroundImg2);
+			backgroundObj2.x    = 0;
+			backgroundObj2.y    = 0;
+			
+		}
+		function onBackgroundImage3(){
+			backgroundObj3      = new createjs.Bitmap(backgroundImg3);
+			backgroundObj3.x    = 1600;
+			backgroundObj3.y    = 0;
+			
+		}
+		function onLoadMeteor(){
+			square      = new createjs.Bitmap(squareImg);
+			square.x    = 0;
+			square.y    = 0;
+			
+		}
+		
+		function switchMode(){
+			if(mode == 0){
+				removeMenuScreen();
+				recreatePlayer();
+				stage.addChild(backgroundObj2);
+				stage.addChild(backgroundObj3);
+				stage.addChild(playerObject);
+				stage.addChild(healthLabel);
+				stage.addChild(debugText);
+				playerScore = 0;
+				debugText.text = "Score: " + playerScore;
+				
+				addGameControls();
+				spawnTimer = createjs.Ticker.getTime();
+				spawnFrequency = 0;
+				forceUp = 0;
+				mode = 1;
+				levelStartRiseSpeed = riseSpeed;
+				levelStartFallSpeed = fallSpeed;
+				return;
+			}
+			if(mode == 1){
+				riseSpeed = levelStartRiseSpeed;
+				fallSpeed = levelStartFallSpeed;
+				stage.removeChild(backgroundObj2);
+				stage.removeChild(backgroundObj3);
+				stage.removeChild(playerObject);
+				stage.removeChild(healthLabel);
+				stage.removeChild(debugText);
+				debugText.text = "Your final Score was: " + playerScore;
+				removeAllProjectiles();
+				removeGameControls();
+				resetVars();
+				displayMenuScreen();
+				mode = 0;
+				return;
+			}
+		}
+		
+		
+		function initMenuScreen(){
+			//Create title of the menu
+			menuScreenTitle = new createjs.Text("Dodger!", "55px Arial", "#080");
+			menuScreenTitle.x = 50;
+			menuScreenTitle.y = 50;
+			
+		
+			createVariableAdjustorRiseSpeed(riseSpeedText, "Rising Speed", 
+										riseSpeedNumber, riseSpeed,
+										50, 175, 
+										riseSpeedButtonOne, riseSpeedButtonTwo, 
+										riseSpeedButtonOneEvent, riseSpeedButtonTwoEvent );
+			
+			createVariableAdjustorFallSpeed(fallSpeedText, "Falling Speed", 
+										fallSpeedNumber, fallSpeed,
+										50, 225, 
+										fallSpeedButtonOne, fallSpeedButtonTwo, 
+										fallSpeedButtonOneEvent, fallSpeedButtonTwoEvent );
+		
+			createVariableAdjustorPlayerSize(playerSizeText, "Size of Player", 
+										playerSizeNumber, playerWidth,
+										50, 275, 
+										playerSizeButtonOne, playerSizeButtonTwo, 
+										playerSizeButtonOneEvent, playerSizeButtonTwoEvent );
+			
+			createVariableAdjustorSquareSize(squareSizeText, "Size of Attack", 
+										squareSizeNumber, squareSize,
+										50, 325, 
+										squareSizeButtonOne, squareSizeButtonTwo, 
+										squareSizeButtonOneEvent, squareSizeButtonTwoEvent );
+			
+			createVariableAdjustorInvisibleTime(invisibleTimeText, "Invisible Time",
+										invisibleTimeNumber, maxAlphaDuration,
+										50, 375, 
+										invisibleTimeButtonOne, invisibleTimeButtonTwo, 
+										invisibleTimeButtonOneEvent, invisibleTimeButtonTwoEvent );
+			
+			
+				//GameStartButton
+			var GSbackground = new createjs.Shape();
+			GSbackground.name = "GSbackground";//(GameStart)Background
+			GSbackground.graphics.beginFill("white").drawRoundRect(500, 420, 200, 60, 10); 
+			var GSlabel = new createjs.Text("Start Game!", "bold 32px Arial", "#080");
+			GSlabel.name = "GSlabel";
+			GSlabel.textAlign = "center";
+			GSlabel.textBaseline = "middle";
+			GSlabel.x = 600;
+			GSlabel.y = 450;	
+			gameStartButton = new createjs.Container();
+			gameStartButton.name = "button";
+			gameStartButton.x = 0;
+			gameStartButton.y = 0;
+			gameStartButton.addChild(GSbackground, GSlabel);
+			gameStartButton.onClick = gameStartEvent;
+			
+		}
+		function tick(elapsedTime) {
+			// move 100 pixels per second (elapsedTimeInMS / 1000msPerSecond * pixelsPerSecond):
+			//playerObject.x += elapsedTime/1000*100;
+			// this will log a steadily increasing value:
+			if(mode == 1){
+				ScrollMore(createjs.Ticker.getTime());
+				PlayerPhysics();
+			}
+		}
+		
+		function addGameControls(){
+			
+			stage.onMouseDown = function(evt) {
+				decrementer = 0;
+				forceUp = maxForceUp;
+				
+				var temp = new createjs.Bitmap(playerImg);
+				temp.x = playerObject.x;
+				temp.y = playerObject.y;
+				temp.alpha = playerObject.alpha;
+				temp.scaleX = playerObject.scaleX;
+				temp.scaleY = playerObject.scaleY;
+				stage.removeChild(playerObject);
+				stage.addChild(temp);
+				playerObject = temp;
+				
+				
+			/*
+				var offset = {x:evt.target.x-evt.stageX, y:evt.target.y-evt.stageY};
+
+				// add a handler to the event object's onMouseMove callback
+				// this will be active until the user releases the mouse button:
+				evt.onMouseMove = function(ev) {
+					ev.target.x = ev.stageX+offset.x;
+					ev.target.y = ev.stageY+offset.y;
+				}
+			*/
+			}
+			stage.onMouseUp = function(evt) {
+				decrementer = 1;
+				var temp = new createjs.Bitmap(playerImg2);
+				temp.x = playerObject.x;
+				temp.y = playerObject.y;
+				temp.alpha = playerObject.alpha;
+				temp.scaleX = playerObject.scaleX;
+				temp.scaleY = playerObject.scaleY;
+				stage.removeChild(playerObject);
+				stage.addChild(temp);
+				playerObject = temp;
+			/*
+				var offset = {x:evt.target.x-evt.stageX, y:evt.target.y-evt.stageY};
+
+				// add a handler to the event object's onMouseMove callback
+				// this will be active until the user releases the mouse button:
+				evt.onMouseMove = function(ev) {
+					ev.target.x = ev.stageX+offset.x;
+					ev.target.y = ev.stageY+offset.y;
+				}
+			*/
+			}
+			
+		}
+		function removeGameControls(){
+			stage.onMouseDown = null;
+			stage.onMouseUp = null;
+		}
+		
+		function PlayerPhysics(elapsedTime){
+			if(forceUp > 0){
+				playerObject.y -= riseSpeed;
+				
+				forceUp -= decrementer;
+			}
+			if(forceUp < 0){
+				forceUp = 0;
+			}
+			if(playerObject.y < screenHeight-playerWidth && forceUp == 0){
+				playerObject.y += fallSpeed;
+			}
+			if(playerObject.y > screenHeight-playerWidth*2){
+				playerObject.y = screenHeight-playerWidth*2;
+			}
+			if(playerObject.y < 0){
+				playerObject.y = 0;
+			}
+			changeColor();
+		}
+		
+		function changeColor(){
+			if(alphaDuration > 0){
+				alphaDuration--;
+			}
+			if(alphaDuration <= 0){
+				alphaDuration = 0;
+				playerObject.alpha = 1;
+			}
+		}
+		
+		function ScrollMore(elapsedTime){
+			healthLabel.text = "Health: "+ playerHealth;
+			if(elapsedTime - spawnTimer > (spawnInterval-spawnFrequency)){
+				spawnTimer = elapsedTime;
+				if((spawnInterval-spawnFrequency) > 50){
+					spawnFrequency += 0.5;
+					fallSpeed += 0.01;
+					riseSpeed += 0.01;
+				}
+				createASquare();
+				stage.removeChild(playerObject);
+				stage.addChild(playerObject);
+			}
+			speedChangeInterval++;
+			
+			if(speedChangeInterval >= maxChangeInterval){
+				speedChangeInterval = 0;
+				for(var j = 0; j<arrayElements; j++){
+					arraySpeeds[j] += Math.floor(Math.random()*maxSquareSpeed)+2;
+				}
+			}
+			moveProjectiles();
+			moveBackgrounds();
+			if(alphaDuration == 0){
+			}
+			
+		}
+		function moveBackgrounds(){
+			backgroundObj2.x -= 15;
+			if(backgroundObj2.x < -1600){
+				backgroundObj2.x = 1600;
+			//	backgroundObj2.y = Math.floor(Math.random()*screenHeight-20);
+			}
+			backgroundObj3.x -= 15;
+			if(backgroundObj3.x < -1600){
+				backgroundObj3.x = 1600;
+			//	backgroundObj2.y = Math.floor(Math.random()*screenHeight-20);
+			}
+		}
+		function createASquare(){
+		
+			square      = new createjs.Bitmap(squareImg);
+			square.x    = screenWidth;
+			square.y    = Math.floor(Math.random()*screenHeight-20);
+			square.y -=	400;
+			square.scaleX = squareSize/ 30;
+			square.scaleY = squareSize/ 30;
+			stage.addChild(square);
+			arraySquares[arrayElements] = square;
+			arraySpeeds[arrayElements] = Math.floor(Math.random()*maxSquareSpeed)+2;
+			arrayElements++;
+			squaresAlive++;
+		
+		}
+		function moveProjectiles(){
+		
+			for(var i = 0; i<arrayElements; i++){
+				if(arraySquares[i] != null){
+					arraySquares[i].x -= arraySpeeds[i];
+					if(alphaDuration == 0){
+						if(	arraySquares[i].x < 100+playerWidth && arraySquares[i].x > 100-squareSize && 
+							arraySquares[i].y > playerObject.y-squareSize && 
+							arraySquares[i].y < playerObject.y+50 ){
+							//var pt = arraySquares[i].localToLocal(0,0,playerObject);
+							//if(playerObject.hitTest(pt.x+10,pt.y+20)){
+							if(true){
+								playerHealth-= damageTaken;
+								if(playerHealth <= 0){
+									switchMode();
+								}
+								/*
+								square = new createjs.Shape();
+								square.graphics.beginFill("red").drawRect(0, 0, squareSize, squareSize);
+								square.x = arraySquares[i].x;
+								square.y = arraySquares[i].y;
+								stage.addChild(square);
+								*/
+								
+								playerObject.alpha = 0.5;
+								alphaDuration = maxAlphaDuration;
+								stage.removeChild(arraySquares[i]);
+								arraySquares[i] = null;
+							}
+						}
+					}
+				}
+			
+							
+				if(arraySquares[i] != null){
+					if(arraySquares[i].x < -50){
+						playerScore += Math.floor((playerWidth+squareSize)/10);
+						arraySquares[i].x = screenWidth;
+						arraySquares[i].y = Math.floor(Math.random()*screenHeight-20);
+						arraySpeeds[i] = Math.floor(Math.random()*maxSquareSpeed)+2;
+						debugText.text = "Score: " + playerScore;
+					}
+				}
+			}
+		}
+		function removeAllProjectiles(){
+			for(var i = 0; i<arrayElements; i++){
+				if(arraySquares[i] != null){
+					stage.removeChild(arraySquares[i]);
+					arraySquares[i] = null;
+				}
+				
+			}
+			
+		}
+		function resetVars(){
+			playerHealth = 100;
+		}
+	
+    </script>
+</head>
+<body onLoad="init();">
+<h1 style="text-align:center;"> Dodger!</h1>
+    <canvas id="demoCanvas" width="800" height="600" style = "border:2px solid black;   margin-left: auto;   margin-right: auto; padding-left: 0; padding-right: 0;  display: block;">
+        alternate content
+    </canvas>
+    <p> Meteors have ravaged your planet and is threatening your extinction! You have built a jetpack to take the fight to the meteors and exact revenge!</p>
+    <p> Use the left mouse button to fly hard!</p>
+    <p> Press "R" to restart your game.</p>
+    <p> Look! No plug-ins Ma!</p>
+</body>
+</html>
